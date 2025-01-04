@@ -27,9 +27,17 @@ class DataIngestion:
         logging.info("Entered the unzip_and_clean method of Data ingestion class")
         try:
             with ZipFile(self.data_ingestion_config.ZIP_FILE_PATH, 'r') as zip_ref:
-                # Filter out the __MACOSX directory
                 valid_files = [f for f in zip_ref.namelist() if not f.startswith('__MACOSX')]
-                zip_ref.extractall(self.data_ingestion_config.ZIP_FILE_DIR, members=valid_files)
+                for file in valid_files:
+                    zip_ref.extract(file, self.data_ingestion_config.ZIP_FILE_DIR)
+                    extracted_path = os.path.join(self.data_ingestion_config.ZIP_FILE_DIR, file)
+                    if os.path.isfile(extracted_path):
+                        new_path = os.path.join(self.data_ingestion_config.ZIP_FILE_DIR, os.path.basename(file))
+                        os.rename(extracted_path, new_path)
+                        # Clean up directory structure
+                        directory = os.path.dirname(extracted_path)
+                        if os.path.exists(directory) and not os.listdir(directory):
+                            os.rmdir(directory)
             logging.info("Exited the unzip_and_clean method of Data ingestion class")
             return self.data_ingestion_config.DATA_ARTIFACTS_DIR, self.data_ingestion_config.NEW_DATA_ARTIFACTS_DIR
         except Exception as e:
